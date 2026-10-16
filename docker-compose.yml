@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      WORKRATE_DATABASE_URL: sqlite:////data/workrate.db
+      WORKRATE_SEED_ON_EMPTY: "true"
+      CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - workrate-data:/data
+    ports:
+      - "8001:8001"
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ""
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  workrate-data:
