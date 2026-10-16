@@ -85,3 +85,9 @@ android-sdk/
 **/.emergent/recordings/
 data/
 backend/data/
+.env
+.env.*
+*.env
+credentials.json
+*.key
+.credentials
