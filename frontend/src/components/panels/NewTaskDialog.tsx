@@ -26,7 +26,7 @@ export function NewTaskDialog({ prefill, onClose, onCreated }: { prefill: Record
       setError(null);
     }
   }, [prefill]);
-  const set = (k: string) => (e: any) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: string) => (e: any) => { setError(null); setForm((f) => ({ ...f, [k]: e.target.value })); };
   const create = useMutation({
     mutationFn: (body: any) => api<TaskDetail>("/tasks", { method: "POST", body }),
     onSuccess: (t) => {

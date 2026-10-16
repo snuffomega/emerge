@@ -17,6 +17,10 @@ Build **WorkRate**, a premium, local-first analytics platform measuring the real
 - 31 backend tests passing (analytics, importers, API journey)
 - README, docker-compose, Dockerfiles, Makefile
 
+## Iterations
+- 2026-10-16 iteration 1: fixed week-bar drill (Recharts 3), CSV mapping for unrecognised headers, criteria payload, unpriced API-eq shows null, community buckets (k=5) without week, extra=forbid inputs, UTC timestamps
+- iteration 2: all flows pass; added trend chart, review-effort row, partial price coverage flags
+
 ## Backlog
 - P1: code-split frontend bundle; saved views; custom amortisation rules
 - P2: automatic ccusage folder watch, git/PR evidence ingestion, scheduled weekly reports

@@ -133,7 +133,7 @@ export default function Compare() {
                         <td className="num px-2 text-right">{fmtMin(r.metrics.human_minutes_per_accepted_median)}</td>
                         <td className="num px-2 text-right text-muted">{fmtTokens(r.tokens_per_accepted)}</td>
                         <td className="num px-2 text-right">{r.cost_per_accepted == null ? <span className="text-progress">unpriced</span> : fmtUsd(r.cost_per_accepted)}</td>
-                        <td className="num px-5 text-right text-muted">{fmtUsd(r.api_equiv_per_accepted)}</td>
+                        <td className="num px-5 text-right text-muted">{r.api_equiv_coverage != null && r.api_equiv_coverage < 0.95 ? <Tip content={`Only ${fmtPct(r.api_equiv_coverage)} of this group's usage records have a known price — value understated`}><span className="text-progress">{r.api_equiv_coverage < 0.5 ? "unpriced" : fmtUsd(r.api_equiv_per_accepted)} · {fmtPct(r.api_equiv_coverage)} priced</span></Tip> : fmtUsd(r.api_equiv_per_accepted)}</td>
                       </tr>
                     ))}
                   </tbody>

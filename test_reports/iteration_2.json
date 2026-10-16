@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 2 retest of WorkRate. Backend: the existing 47 tests plus the live public-URL suite (WORKRATE_LIVE_E2E=1) all pass. A new live retest file (9 tests) passes: CSV unmapped headers, CSV remap and commit, extra=forbid 422 on PATCH and POST, create task with criteria, computed api_equiv null for unpriced, community buckets on/off, tasks default limit. Frontend (Playwright, 1920x1080): all 9 requested items were verified. Week-bar drill opens 'Tasks created week of Sep 28, 2026' with 40 rows, and clicking a row opens the task sheet. The CSV mapping UI renders with the 'No date column recognised' warning; remapping gives 1 new row with 150 tokens; commit works; editing the textarea hides and resets the mapping. Create task with 2 criteria works, and validation text is human-readable. Pi/glm-4.6 task #393 shows API-equivalent '—' (1 unpriced). Contribution preview: 197 shared with synthetic ON, 0 with OFF, no week column, period 2026-08 to 2026-10. The trend chart and metric-review-effort render. Full journey: sample import gave 4 new and 1 invalid; the record was linked to a new task, which was marked accepted and verified with evidence added; dashboard accepted went from 314 to 315. Weekly report renders and export/all?format=json returns 200. Compare with 2 keys shows mix-adjusted values (87% cov 67%, 77% cov 52%). Drift shows claude-sonnet-4-5 CONSISTENT CHANGE. Efficiency uplift hero shows 3.0x. Settings demo reset returned 200 and the data went back to 410 tasks. Light/dark toggle works. Demo data was reset at the end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/v1/analytics/compare (and model-level api_equiv aggregates)", "issue": "api_equiv_per_accepted is computed whenever at least one record in the group is priced, so partial coverage shows as an exact number. Repro: import a CSV glm-4.6 row with a source cost of 0.02 and compare by model. glm-4.6 then shows API-EQ/ACC '$0.00' (0.02/27) even though 69 of 70 records are unpriced. The task sheet correctly shows '—'. Suggest returning a coverage fraction and flagging partial coverage in the UI (e.g. '$0.00 · 1/70 priced'), or returning null below a coverage threshold."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "NewTaskDialog", "issue": "A stale validation message stays visible. Submit empty to get 'Title must be at least 3 characters', then fix the title and enter reference minutes -5. The native min=1 check blocks the submit, so the old title error stays on screen.", "selector": "[data-testid=new-task-error]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Import preview", "issues": ["Commit button reads 'Import 1 rows' (pluralisation)"]},
+      {"screen": "Dashboard trend-chart", "issues": ["No legend visible for the two rate lines (first-pass vs accepted) and the cost bars; the user must rely on the subtitle text"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter2_retest_live.py", "/app/backend/tests/test_e2e_public_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: flag partial price coverage in Compare API-EQ / ACC (and similar aggregates) instead of showing an exact $ value from 1 priced record out of N",
+    "Optional: clear new-task-error when inputs change or before native validation runs; fix 'Import 1 rows' pluralisation; add a legend to the trend chart"
+  ],
+  "critical_code_review_comments": [
+    "analytics.py line ~439: api_equiv_per_accepted is used when unknown_records < records. This hides partial coverage. Consider returning coverage alongside the value.",
+    "ImportWizard: changing format or harness does not reset the mapping. That is acceptable, but the mapping is only seeded from the first preview (`if r.csv?.mapping && !mapping`)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter2_retest_live.py"],
+  "success_rate": {"backend": "100%", "frontend": "100% of requested flows (3 minor polish items)"},
+  "seed_data_creation": "Created TEST_ tasks and imports during the run; all removed via POST /api/v1/demo/reset at the end (410 tasks).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run live suites with WORKRATE_LIVE_E2E=1 REACT_APP_BACKEND_URL=<url> python -m pytest tests -n 0. The task create payload requires category, difficulty and project_id; criteria go in 'criteria': [{text}]. Nav testids: nav-dashboard, nav-ledger, nav-usage, nav-efficiency, nav-compare, nav-drift, nav-community, nav-reports, nav-settings. The import UI is under the usage-tab-import tab. The Pi harness id is 3 (filter-harness-option-3), and task #393 is a glm-4.6 unpriced task. New-task dialog: the project select is required."
+}

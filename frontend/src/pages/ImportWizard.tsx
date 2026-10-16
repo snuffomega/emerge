@@ -115,7 +115,7 @@ export function ImportWizard() {
         <Section testid="import-preview" title={<>Preview · <span className="num">{preview.source}</span> · {preview.total} rows</>} sub="Nothing has been saved yet."
           actions={<>
             <NativeSelect data-testid="import-mode-select" value={mode} onChange={(e) => setMode(e.target.value as any)} className="w-56"><option value="skip">Skip duplicates & changed rows</option><option value="overwrite">Overwrite changed rows</option></NativeSelect>
-            <Button variant="primary" data-testid="import-commit-btn" disabled={commit.isPending || !(c.new || (mode === "overwrite" && c.changed))} onClick={() => commit.mutate()}>Import {(c.new ?? 0) + (mode === "overwrite" ? c.changed ?? 0 : 0)} rows</Button>
+            <Button variant="primary" data-testid="import-commit-btn" disabled={commit.isPending || !(c.new || (mode === "overwrite" && c.changed))} onClick={() => commit.mutate()}>{(() => { const n = (c.new ?? 0) + (mode === "overwrite" ? c.changed ?? 0 : 0); return `Import ${n} row${n === 1 ? "" : "s"}`; })()}</Button>
           </>}>
           <div className="flex flex-wrap gap-6 border-b border-line px-5 py-3" data-testid="import-preview-counts">
             {["new", "duplicate", "changed", "invalid"].map((k) => (

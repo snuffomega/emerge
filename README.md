@@ -145,6 +145,7 @@ cd backend && python -m pytest tests -q
 ```
 * `test_analytics.py`: Wilson intervals, the three-signal outcome metrics, subscription allocation and idle cost, unknown-price handling, outcome flow, uplift confidence and failed-attempt time, drift labelling, confounders, mix adjustment, weekly series.
 * `test_importers.py`: realistic Claude Code daily, Codex daily, session and monthly fixtures; invalid input; CSV auto-mapping and missing fields.
+* `test_e2e_public_api.py`, `test_iter2_retest_live.py`: optional live suites against a running deployment (`WORKRATE_LIVE_E2E=1`), skipped by default.
 * `test_api.py`: migrations and seed, dashboard totals reconciled against persisted rows, filter partitioning, amortised subscription spend, seeded drift detection, and the full journey: import → dedupe → overwrite → create task → link usage → record outcome → history → evidence → weekly report → CSV/JSON export. Also price edits with repricing, community privacy (no identifiers, k-anonymity) and validation.
 
 ---

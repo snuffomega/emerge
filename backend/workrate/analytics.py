@@ -437,6 +437,7 @@ def compare_groups(tasks: list, usages: list, alloc: dict[int, float], task_key:
             "usage": um,
             "cost_per_accepted": _cost_per(um, acc),
             "api_equiv_per_accepted": (um["api_equiv_cost"] / acc) if acc and um["api_equiv_unknown_records"] < um["records"] else None,
+            "api_equiv_coverage": ((um["records"] - um["api_equiv_unknown_records"]) / um["records"]) if um["records"] else None,
             "tokens_per_accepted": (um["tokens"] / acc) if acc else None,
             "interventions_per_task": (sum(t.intervention_count or 0 for t in ts if t.outcome in RESOLVED) / m["resolved"]) if m["resolved"] else None,
             "sufficient_sample": len([t for t in ts if t.outcome in RESOLVED]) >= min_n,

@@ -122,6 +122,11 @@ function TrendChart({ d }: { d: any }) {
   const data = d.weekly.filter((w: any) => w.resolved > 0).map((w: any) => ({ ...w, label: fmtDate(w.week) }));
   return (
     <Section testid="trend-chart" title="Quality and unit cost over time" sub="Weekly first-pass and accepted rates (left) against actual cost per accepted task (right). Weekly samples are small — see Drift for evidence.">
+      <div className="flex gap-4 px-5 pt-3 text-[11.5px] text-muted">
+        {[["var(--verified)", "First-pass rate"], ["var(--accepted)", "Accepted rate"], ["var(--usage)", "Cost per accepted task"]].map(([c, l]) => (
+          <span key={l} className="flex items-center gap-1.5"><span className="size-2 rounded-sm" style={{ background: c }} />{l}</span>
+        ))}
+      </div>
       <div className="h-[240px] px-2 py-3">
         <ResponsiveContainer>
           <ComposedChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
