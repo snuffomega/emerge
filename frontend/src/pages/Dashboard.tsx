@@ -37,7 +37,8 @@ function ValueChart({ d, params }: { d: any; params: any }) {
   const { openDrill } = usePanels();
   const data = d.weekly.map((w: any) => ({ ...w, label: fmtDate(w.week) }));
   const drillWeek = (e: any) => {
-    const w = e?.activePayload?.[0]?.payload;
+    const idx = e?.activeIndex ?? e?.activeTooltipIndex;
+    const w = idx != null ? data[Number(idx)] : e?.activePayload?.[0]?.payload;
     if (!w) return;
     const end = new Date(new Date(`${w.week}T00:00:00`).getTime() + 6 * 86400000).toISOString().slice(0, 10);
     openDrill({ title: `Tasks created week of ${fmtDate(w.week, true)}`, params: { ...params, start: w.week, end } });
@@ -56,7 +57,7 @@ function ValueChart({ d, params }: { d: any; params: any }) {
       </div>
       <div className="h-[300px] px-2 pb-2 pt-2">
         <ResponsiveContainer>
-          <ComposedChart data={data} onClick={drillWeek} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="22%">
+          <ComposedChart accessibilityLayer={false} data={data} onClick={drillWeek} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="22%">
             <CartesianGrid vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} />
             <YAxis yAxisId="l" tickLine={false} axisLine={false} width={34} />
@@ -117,6 +118,28 @@ function UsageFlow({ d, params }: { d: any; params: any }) {
   );
 }
 
+function TrendChart({ d }: { d: any }) {
+  const data = d.weekly.filter((w: any) => w.resolved > 0).map((w: any) => ({ ...w, label: fmtDate(w.week) }));
+  return (
+    <Section testid="trend-chart" title="Quality and unit cost over time" sub="Weekly first-pass and accepted rates (left) against actual cost per accepted task (right). Weekly samples are small — see Drift for evidence.">
+      <div className="h-[240px] px-2 py-3">
+        <ResponsiveContainer>
+          <ComposedChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} />
+            <YAxis yAxisId="l" domain={[0, 1]} tickFormatter={(v) => `${Math.round(v * 100)}%`} tickLine={false} axisLine={false} width={40} />
+            <YAxis yAxisId="r" orientation="right" tickFormatter={(v) => fmtUsd(v, 0)} tickLine={false} axisLine={false} width={48} />
+            <Tooltip content={<ChartTip fmt={(v: number, k: string) => (k === "cost_per_accepted" ? fmtUsd(v) : fmtPct(v))} />} />
+            <Bar yAxisId="r" dataKey="cost_per_accepted" name="Cost / accepted" fill="var(--usage)" fillOpacity={0.25} radius={[3, 3, 0, 0]} />
+            <Line yAxisId="l" dataKey="success_rate" name="Accepted rate" stroke="var(--accepted)" strokeWidth={2} dot={false} type="monotone" />
+            <Line yAxisId="l" dataKey="first_pass_rate" name="First-pass" stroke="var(--verified)" strokeWidth={2} dot={{ r: 2.5 }} type="monotone" />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </Section>
+  );
+}
+
 function MetricRow({ label, help, value, delta, extra, onClick, testid }: { label: string; help: string; value: React.ReactNode; delta?: React.ReactNode; extra?: React.ReactNode; onClick?: () => void; testid: string }) {
   return (
     <button onClick={onClick} disabled={!onClick} data-testid={testid} className="row-hover grid w-full grid-cols-[1fr_auto] items-center gap-x-4 border-b border-line/70 px-5 py-2.5 text-left last:border-0">
@@ -165,6 +188,7 @@ function EffortCost({ d }: { d: any }) {
       {row("API-equivalent per accepted", fmtUsd(d.api_equiv_per_accepted), u.api_equiv_unknown_records ? <span className="text-progress">{u.api_equiv_unknown_records} records unpriced — understated</span> : "at list prices", undefined, "metric-api-per-accepted")}
       {row("Actual vs API-equivalent", u.api_equiv_cost ? fmtPct(u.actual_spend / u.api_equiv_cost) : "—", `${fmtUsd(u.actual_spend)} paid vs ${fmtUsd(u.api_equiv_cost)} list`, undefined, "metric-actual-vs-api")}
       {row("Human time per accepted task", fmtMin(t.human_minutes_per_accepted_median), `median · ${fmtMin(t.human_minutes_on_failed)} spent on failed attempts`, undefined, "metric-human-per-accepted")}
+      {row("Human review & intervention", `${(t.review_minutes_total / 60).toFixed(1)}h`, `${fmtPct(t.human_minutes_total ? t.review_minutes_total / t.human_minutes_total : null)} of ${(t.human_minutes_total / 60).toFixed(0)}h human time · ${t.intervention_total} interventions`, undefined, "metric-review-effort")}
       {row("Time to accepted outcome", fmtHours(t.time_to_accept_hours_median), `median · p75 ${fmtHours(t.time_to_accept_hours_p75)}`, undefined, "metric-tta")}
       {row("Tokens per accepted task", fmtTokens(d.tokens_per_accepted), `${fmtTokens(u.tokens)} over ${fmtInt(u.sessions)} sessions`, undefined, "metric-tokens-per-accepted")}
     </Section>
@@ -246,6 +270,7 @@ export default function Dashboard() {
         {d.data_quality.synthetic_share > 0 && <Note>Includes synthetic demo records ({fmtPct(d.data_quality.synthetic_share)} of rows in this view). Import your own ccusage exports or reset/clear demo data in Settings.</Note>}
         <ValueChart d={d} params={params} />
         <UsageFlow d={d} params={params} />
+        <TrendChart d={d} />
         <div className="grid gap-5 xl:grid-cols-2">
           <OutcomeMetrics d={d} params={params} />
           <EffortCost d={d} />

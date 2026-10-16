@@ -89,6 +89,6 @@ def test_csv_auto_mapping_and_missing_fields():
     assert guess_mapping(["day", "tokens"])["total_tokens"] == "tokens"
 
 
-def test_csv_requires_date_column():
-    with pytest.raises(ParseError):
-        parse_csv("model,tokens\nx,1\n", None)
+def test_csv_without_date_column_returns_headers_for_mapping():
+    rows, headers, mapping = parse_csv("model,tokens\nx,1\n", None)
+    assert rows == [] and headers == ["model", "tokens"] and mapping["date"] is None

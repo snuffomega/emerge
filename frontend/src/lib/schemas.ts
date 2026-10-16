@@ -12,7 +12,7 @@ export const taskCreateSchema = z.object({
   harness_id: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().int().positive().nullable()),
   harness_version: z.string().max(40).optional().transform((v) => v || null),
   reference_human_minutes: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().positive("Must be > 0").nullable()),
-  criteria: z.array(z.string().trim().min(1)).default([]),
+  criteria: z.array(z.string().trim().min(1)).default([]).transform((a) => a.map((text) => ({ text }))),
 });
 
 export const measurementSchema = z.object({
@@ -63,5 +63,5 @@ export const deliverableSchema = z.object({
 export function firstError(r: z.SafeParseReturnType<any, any>): string | null {
   if (r.success) return null;
   const i = r.error.issues[0];
-  return `${i.path.join(".") || "value"}: ${i.message}`;
+  return i.message;
 }

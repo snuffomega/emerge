@@ -48,7 +48,7 @@ function Overview({ c }: { c: any }) {
         <Section testid="community-trends" title="Weekly accepted rate" sub="Synthetic trend lines per model.">
           <div className="h-[280px] p-2">
             <ResponsiveContainer>
-              <LineChart data={trend} margin={{ top: 10, right: 16, left: -14, bottom: 0 }}>
+              <LineChart accessibilityLayer={false} data={trend} margin={{ top: 10, right: 16, left: -14, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} />
                 <YAxis domain={[0.5, 1]} tickFormatter={(v) => `${Math.round(v * 100)}`} tickLine={false} axisLine={false} />
@@ -96,7 +96,7 @@ function ContributionPreview() {
       actions={<>
         <label className="flex items-center gap-2 text-xs text-muted"><Switch data-testid="contrib-include-synthetic-switch" checked={incl} onCheckedChange={setIncl} /> include synthetic</label>
         <Button size="sm" data-testid="contrib-download-btn" onClick={download} disabled={!p}><Download /> Download JSON</Button>
-        <Tip content="Community publishing is a future capability. Nothing is sent."><span><Button size="sm" variant="primary" disabled data-testid="contrib-publish-btn"><Lock /> Publish</Button></span></Tip>
+        <Tip content="Community publishing is a future capability. Nothing is sent."><span><Button size="sm" variant="secondary" disabled data-testid="contrib-publish-btn"><Lock /> Publish</Button></span></Tip>
       </>}>
       {isLoading || !p ? <Loading /> : (
         <>
@@ -111,7 +111,7 @@ function ContributionPreview() {
             </div>
             <div className="space-y-2 text-[12.5px]">
               <div className="eyebrow">privacy</div>
-              <p className="text-muted">Tasks are aggregated into model × harness × category × difficulty × week buckets. Buckets with fewer than <b className="num text-text">{p.k_anonymity}</b> tasks are suppressed.</p>
+              <p className="text-muted">Tasks are aggregated into model × harness × category × difficulty buckets{p.period ? ` for ${p.period.from_month} → ${p.period.to_month}` : ""}. Buckets with fewer than <b className="num text-text">{p.k_anonymity}</b> tasks are suppressed.</p>
               <div className="num grid grid-cols-3 gap-2 text-center">
                 <div className="rounded border border-line p-2"><div className="text-lg">{p.tasks_considered}</div><div className="text-[10px] text-faint">considered</div></div>
                 <div className="rounded border border-line p-2"><div className="text-lg text-verified" data-testid="contrib-tasks-shared">{p.tasks_shared}</div><div className="text-[10px] text-faint">in buckets</div></div>
@@ -122,15 +122,15 @@ function ContributionPreview() {
           </div>
           <div className="max-h-80 overflow-y-auto">
             <table className="w-full text-[12px]" data-testid="contrib-buckets-table">
-              <thead className="sticky top-0 bg-panel"><tr className="eyebrow border-b border-line text-left"><th className="px-5 py-2 font-normal">model</th><th className="px-2 font-normal">harness</th><th className="px-2 font-normal">cell</th><th className="px-2 font-normal">week</th><th className="px-2 text-right font-normal">n</th><th className="px-2 text-right font-normal">acc / ver / fp</th><th className="px-2 text-right font-normal">human med.</th><th className="px-5 text-right font-normal">tokens med.</th></tr></thead>
+              <thead className="sticky top-0 bg-panel"><tr className="eyebrow border-b border-line text-left"><th className="px-5 py-2 font-normal">model</th><th className="px-2 font-normal">harness</th><th className="px-2 font-normal">cell</th><th className="px-2 text-right font-normal">n</th><th className="px-2 text-right font-normal">acc / ver / fp</th><th className="px-2 text-right font-normal">human med.</th><th className="px-5 text-right font-normal">tokens med.</th></tr></thead>
               <tbody>
                 {p.buckets.map((b: any, i: number) => (
                   <tr key={i} className="num border-b border-line/60">
-                    <td className="px-5 py-1.5">{b.model}</td><td className="px-2 text-muted">{b.harness}</td><td className="px-2 text-muted">{b.category}/{b.difficulty}</td><td className="px-2 text-muted">{b.week}</td>
+                    <td className="px-5 py-1.5">{b.model}</td><td className="px-2 text-muted">{b.harness}</td><td className="px-2 text-muted">{b.category}/{b.difficulty}</td>
                     <td className="px-2 text-right">{b.n}</td><td className="px-2 text-right">{b.accepted} / {b.verified} / {b.first_pass}</td><td className="px-2 text-right">{fmtMin(b.human_minutes_median)}</td><td className="px-5 text-right text-muted">{fmtTokens(b.tokens_median)}</td>
                   </tr>
                 ))}
-                {!p.buckets.length && <tr><td colSpan={8} className="px-5 py-6 text-center text-xs text-faint">No bucket reaches k={p.k_anonymity}. Nothing would be shared.</td></tr>}
+                {!p.buckets.length && <tr><td colSpan={7} className="px-5 py-6 text-center text-xs text-faint">No bucket reaches k={p.k_anonymity}. Nothing would be shared.</td></tr>}
               </tbody>
             </table>
           </div>

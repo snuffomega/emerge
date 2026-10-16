@@ -67,7 +67,7 @@ SHARED_FIELDS = [
     ("harness", "Harness identifier (e.g. claude-code)"),
     ("category", "Task category"),
     ("difficulty", "Task difficulty band"),
-    ("week", "ISO week of the outcome (no exact timestamps)"),
+    ("period", "Month range covered by the contribution (no per-task dates)"),
     ("n", "Number of resolved tasks in the bucket"),
     ("accepted / verified / first_pass", "Outcome counts"),
     ("rework_cycles_mean", "Mean rework cycles"),
@@ -80,7 +80,7 @@ EXCLUDED_FIELDS = ["Task titles & descriptions", "Project names", "Deliverable &
 
 
 def contribution_preview(db: Session, start: date | None, end: date | None, include_synthetic: bool) -> dict:
-    q = select(Task).where(Task.outcome.in_(A.RESOLVED))
+    q = select(Task).where(Task.outcome.in_(list(A.RESOLVED)))
     if not include_synthetic:
         q = q.where(Task.is_synthetic.is_(False))
     tasks = list(db.scalars(q))
@@ -95,17 +95,20 @@ def contribution_preview(db: Session, start: date | None, end: date | None, incl
         tok[u.task_id] += u.total_tokens or 0
     buckets = defaultdict(list)
     for t in tasks:
-        wk = A.week_start(A.to_date(t.created_at)).isoformat()
-        buckets[(models.get(t.model_id, "unknown"), harn.get(t.harness_id, "unknown"), t.category, t.difficulty, wk)].append(t)
+        buckets[(models.get(t.model_id, "unknown"), harn.get(t.harness_id, "unknown"), t.category, t.difficulty)].append(t)
     shared, suppressed = [], 0
-    for (m, h, c, d, wk), ts in sorted(buckets.items()):
+    period = None
+    if tasks:
+        ds = [A.to_date(t.created_at) for t in tasks]
+        period = {"from_month": min(ds).strftime("%Y-%m"), "to_month": max(ds).strftime("%Y-%m")}
+    for (m, h, c, d), ts in sorted(buckets.items()):
         if len(ts) < K_ANON:
             suppressed += len(ts)
             continue
         hm = [t.human_minutes for t in ts if t.human_minutes is not None]
         tk = [tok[t.id] for t in ts if tok.get(t.id)]
         shared.append({
-            "model": m, "harness": h, "category": c, "difficulty": d, "week": wk, "n": len(ts),
+            "model": m, "harness": h, "category": c, "difficulty": d, "n": len(ts),
             "accepted": sum(1 for t in ts if t.human_accepted), "verified": sum(1 for t in ts if t.verified),
             "first_pass": sum(1 for t in ts if A.is_first_pass(t)),
             "rework_cycles_mean": round(sum(t.rework_cycles for t in ts) / len(ts), 2),
@@ -118,5 +121,5 @@ def contribution_preview(db: Session, start: date | None, end: date | None, incl
         "k_anonymity": K_ANON, "tasks_considered": len(tasks), "tasks_shared": sum(b["n"] for b in shared),
         "tasks_suppressed": suppressed, "includes_synthetic": include_synthetic,
         "shared_fields": [{"field": f, "description": d} for f, d in SHARED_FIELDS],
-        "excluded_fields": EXCLUDED_FIELDS, "buckets": shared,
+        "excluded_fields": EXCLUDED_FIELDS, "period": period, "buckets": shared,
     }

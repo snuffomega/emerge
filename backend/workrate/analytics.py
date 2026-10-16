@@ -120,6 +120,8 @@ def task_metrics(tasks: list) -> dict:
         "verification_rate": rate(len(verified), len(accepted)),
         "avg_rework_cycles": (sum(t.rework_cycles or 0 for t in accepted) / len(accepted)) if accepted else None,
         "human_minutes_total": sum(human_known),
+        "review_minutes_total": sum(t.review_minutes or 0 for t in resolved),
+        "intervention_total": sum(t.intervention_count or 0 for t in resolved),
         "human_minutes_missing": len(resolved) - len(human_known),
         "human_minutes_per_accepted_median": med(t.human_minutes for t in accepted),
         "human_minutes_on_failed": sum(t.human_minutes or 0 for t in failed),

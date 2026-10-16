@@ -36,7 +36,7 @@ export interface Meta {
 export interface TaskMetrics {
   attempted: number; in_progress: number; resolved: number; agent_reported: number; accepted: number; verified: number;
   failed: number; success_rate: Rate; first_pass_rate: Rate; rework_rate: Rate; intervention_rate: Rate;
-  overclaim_rate: Rate; verification_rate: Rate; avg_rework_cycles: number | null; human_minutes_total: number;
+  overclaim_rate: Rate; verification_rate: Rate; avg_rework_cycles: number | null; human_minutes_total: number; review_minutes_total: number; intervention_total: number;
   human_minutes_missing: number; human_minutes_per_accepted_median: number | null; human_minutes_on_failed: number;
   time_to_accept_hours_median: number | null; time_to_accept_hours_p75: number | null;
 }

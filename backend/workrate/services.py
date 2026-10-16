@@ -190,7 +190,8 @@ def _parse(req) -> tuple[list[dict], str, list[str], dict]:
         rows, source, warns = parse_ccusage(req.content)
         return rows, source, warns, {}
     rows, headers, mapping = parse_csv(req.content, req.csv_mapping)
-    return rows, "csv", [], {"headers": headers, "mapping": mapping}
+    warns = [] if mapping.get("date") else ["No date column recognised — map the CSV columns below, then re-run the preview."]
+    return rows, "csv", warns, {"headers": headers, "mapping": mapping}
 
 
 FIELDS_COMPARED = ("input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens", "total_tokens", "reported_cost")

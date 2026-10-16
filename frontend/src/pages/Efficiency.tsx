@@ -57,7 +57,7 @@ function UpliftScatter({ rows }: { rows: any[] }) {
       </div>
       <div className="h-[340px] p-2">
         <ResponsiveContainer>
-          <ScatterChart margin={{ top: 10, right: 20, bottom: 18, left: 4 }}>
+          <ScatterChart accessibilityLayer={false} margin={{ top: 10, right: 20, bottom: 18, left: 4 }}>
             <CartesianGrid />
             <XAxis type="number" dataKey="x" scale="log" domain={[10, 2000]} ticks={[10, 30, 60, 120, 240, 480, 960]} tickFormatter={fmtMin} name="Reference" label={{ value: "reference minutes (log)", position: "insideBottom", offset: -10, className: "recharts-text" }} />
             <YAxis type="number" dataKey="y" scale="log" domain={[1, 2000]} ticks={[1, 5, 15, 30, 60, 120, 240, 480, 960]} tickFormatter={fmtMin} name="Actual" width={48} />

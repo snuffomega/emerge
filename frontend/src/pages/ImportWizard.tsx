@@ -14,7 +14,7 @@ import { Note, Section } from "@/components/common";
 const CSV_FIELDS = ["date", "session_id", "model", "input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens", "total_tokens", "cost", "project", "agent_minutes", "billing"];
 
 function sampleCcusage(endIso: string) {
-  const end = new Date(`${endIso}T00:00:00`);
+  const end = new Date(`${endIso}T00:00:00Z`);
   const day = (i: number) => new Date(end.getTime() - i * 86400000).toISOString().slice(0, 10);
   const mk = (i: number, model: string, inp: number, out: number, cw: number, cr: number) => ({
     date: day(i), inputTokens: inp, outputTokens: out, cacheCreationTokens: cw, cacheReadTokens: cr,
@@ -70,12 +70,12 @@ export function ImportWizard() {
                 <Upload className="size-3.5" /> Choose file
                 <input data-testid="import-file-input" type="file" accept=".json,.csv,.txt" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
               </label>
-              <Button size="md" variant="ghost" data-testid="import-load-sample-btn" onClick={() => { setContent(sampleCcusage(meta?.range.end ?? new Date().toISOString().slice(0, 10))); setFilename("sample-ccusage-daily.json"); setFormat("ccusage"); setHarness("claude-code"); setPreview(null); setDone(null); }}>
+              <Button size="md" variant="ghost" data-testid="import-load-sample-btn" onClick={() => { setContent(sampleCcusage(meta?.range.end ?? new Date().toISOString().slice(0, 10))); setFilename("sample-ccusage-daily.json"); setFormat("ccusage"); setMapping(null); setHarness("claude-code"); setPreview(null); setDone(null); }}>
                 <FileJson /> Load sample ccusage export
               </Button>
               <span className="num text-[11px] text-faint">{filename} · {fmtInt(content.length)} chars</span>
             </div>
-            <Textarea data-testid="import-content-textarea" value={content} onChange={(e) => { setContent(e.target.value); setPreview(null); }} placeholder={'Paste output of `npx ccusage daily --json`, `npx @ccusage/codex daily --json`, or a CSV…'} className="num h-56 text-[11.5px]" />
+            <Textarea data-testid="import-content-textarea" value={content} onChange={(e) => { setContent(e.target.value); setPreview(null); setMapping(null); setDone(null); if (!filename.startsWith("pasted")) setFilename("pasted"); }} placeholder={'Paste output of `npx ccusage daily --json`, `npx @ccusage/codex daily --json`, or a CSV…'} className="num h-56 text-[11.5px]" />
             <p className="mt-2 text-[11.5px] text-faint">Imported usage is never treated as completed work. After importing, link records to tasks in the Ledger or the Records tab.</p>
           </div>
           <div className="space-y-3">

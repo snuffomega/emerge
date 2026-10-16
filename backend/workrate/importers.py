@@ -190,7 +190,7 @@ def parse_csv(content: str, mapping: dict[str, str | None] | None) -> tuple[list
         raise ParseError("CSV has no header row")
     mapping = {**guess_mapping(headers), **{k: v for k, v in (mapping or {}).items() if v}}
     if not mapping.get("date"):
-        raise ParseError("A date column is required. Map one of: " + ", ".join(headers))
+        return [], headers, mapping
     rows = []
     for i, r in enumerate(reader):
         get = lambda f: r.get(mapping[f]) if mapping.get(f) else None  # noqa: E731

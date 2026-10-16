@@ -1,0 +1,59 @@
+{
+  "summary": "First full test run of WorkRate (FastAPI+SQLite backend, Vite/React19 frontend). Backend: existing 31 pytest tests pass, plus a new 16-test public-URL suite (15/16 pass). Frontend: tested dashboard (headline, measure toggles, flow buckets, metric drills), global filters (presets, custom dates, project/model/harness popovers, URL persistence across nav and reload), ledger filters/search/row->sheet, create task (validation + criteria), task sheet (3 switches + outcome rules, measurements save, history, criteria, evidence, deliverables, usage linking + computed panel), ccusage import (4 new/1 invalid/unpriced warning -> commit -> 4 duplicates + commit disabled -> history), CSV import w/ mapping, records-tab linking, subscriptions add/validate/delete, manual entry, efficiency (hero, scatter click->task, cell drill), compare (model keys, mix-adjusted table, harness/project/period A/B), drift (labels, harness confounders, min-n), community (banner, shared/excluded, switch, publish disabled, download), reports (weekly, week change, all export links 200), settings (reprice glm-4.6 toast, add project, demo reset with confirm, theme toggle). Found 1 critical bug (fixed: create task with criteria failed), 2 high bugs (week-bar drill dead; CSV mapping UI unreachable for unrecognised headers) and several minor issues. Demo data reset via POST /api/v1/demo/reset at the end.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/v1/imports/preview (format=csv)", "issue": "When CSV headers are not auto-recognised (e.g. 'when,llm,in,out,usd'), importers.parse_csv raises ParseError -> 422 'A date column is required...'. No csv.headers/mapping is returned, so the frontend mapping UI (csv-mapping, rendered only when preview.csv.headers exists) never appears; the user cannot map columns from the UI. The review's CSV flow (map date->when ...) is impossible as written. Fix: when date is unmapped return 200 with csv {headers, mapping} and rows marked invalid / file_warning instead of raising (or have the frontend render mapping from a 422 payload).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/v1/tasks/{id} computed.api_equiv_cost", "issue": "Returns 0 when all linked usage is unpriced (list endpoint returns null). TaskSheet shows 'API-EQUIVALENT $0.00 · 1 unpriced' which contradicts the 'never guessed' rule. Return None when no priced records."},
+      {"endpoint": "GET /api/v1/community/contribution-preview?include_synthetic=true", "issue": "tasks_shared=0, tasks_suppressed=396 even with all synthetic data included (model x harness x category x difficulty x week buckets never reach k=5), so the preview never demonstrates a shared bucket and the include-synthetic toggle has no visible effect on counts."},
+      {"endpoint": "PATCH /api/v1/tasks/{id} (and other *In/*Patch schemas)", "issue": "Unknown fields silently ignored with 200 (e.g. 'reference_minutes' instead of 'reference_human_minutes'). Consider model_config extra='forbid'."},
+      {"endpoint": "POST /api/v1/tasks vs PATCH", "issue": "create_task uses datetime.now() while update_task uses utcnow() for state timestamps -> time_to_accept skew if server TZ != UTC."},
+      {"endpoint": "GET /api/v1/tasks", "issue": "Default limit=500 silently truncates; dashboard drill/ledger will under-count once tasks > 500."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Dashboard value chart (Dashboard.tsx drillWeek)", "issue": "Clicking a week bar does nothing. drillWeek reads e.activePayload, which Recharts 3.x (3.6.0) no longer passes to ComposedChart onClick. Use e.activeIndex / e.activeLabel to look up data[idx] (or attach onClick to each <Bar>).", "selector": "[data-testid='value-chart'] .recharts-bar-rectangle", "priority": "HIGH"},
+      {"component": "NewTaskDialog / lib/schemas.ts", "issue": "FIXED BY TESTER: creating a task with any acceptance criterion failed with '0: Input should be a valid dictionary...' because criteria were sent as strings; backend expects [{text}]. Added .transform(a => a.map(text => ({text}))) to taskCreateSchema.criteria. Verified creation now works.", "selector": "[data-testid='new-task-submit-btn']", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "CSV import with non-standard headers", "issue": "Preview shows only an error toast; mapping selects (csv-map-*) never render (see backend issue). Works only when a 'date'-like header is auto-detected.", "affected_selectors": ["[data-testid='csv-mapping']", "[data-testid='csv-remap-btn']"]}
+    ],
+    "design_issues": [
+      {"screen": "Global filter bar / Manual entry / Subscriptions / Reports week", "issues": ["Native browser date pickers (input type=date, mm/dd/yyyy) used instead of a styled shadcn Calendar/Popover; inconsistent with the rest of the UI."]},
+      {"screen": "Dashboard value chart", "issues": ["Recharts 3 accessibility layer draws a white focus rectangle around the plot area after click (visible outline). Set accessibilityLayer={false} or style outline."]},
+      {"screen": "Community", "issues": ["Disabled 'Publish' button still uses bright primary styling and looks enabled."]},
+      {"screen": "Light theme sidebar", "issues": ["'SYNTHETIC DEMO DATA' badge yellow text on cream background has low contrast."]},
+      {"screen": "Drift charts", "issues": ["Last x-axis tick label is clipped ('Oct 1' instead of 'Oct 12')."]},
+      {"screen": "Mobile 390px", "issues": ["Filter bar end-date input overflows viewport (scrollWidth 394); ledger table titles truncated to 3 chars. Low priority for a desktop analytics tool."]},
+      {"screen": "New task dialog / forms", "issues": ["Validation errors show raw field paths (e.g. 'project_id: Choose a project', 'title: ...'); stale error persists until next submit."]},
+      {"screen": "Import wizard", "issues": ["Filename label keeps 'sample-ccusage-daily.json' after pasting other content; a later pasted CSV reuses the previous csv mapping state (mapping only reset on file upload)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_e2e_public_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix dashboard week-bar drill for Recharts 3: replace e.activePayload with data[e.activeIndex] (Dashboard.tsx line ~40)",
+    "Make CSV preview return headers+mapping (200 with invalid rows/file_warning) when date column cannot be auto-mapped so the mapping UI can render; reset mapping when content changes",
+    "Return null (not 0) for computed.api_equiv_cost when no linked record has a known price",
+    "Review community contribution bucketing so synthetic data yields at least some k>=5 buckets (e.g. drop week or use month) or explain in UI",
+    "Optional: replace native date inputs with shadcn calendar; tone down disabled Publish button; fix light-theme synthetic badge contrast; set extra='forbid' on input schemas; use consistent UTC timestamps in create_task"
+  ],
+  "critical_code_review_comments": [
+    "Dashboard.tsx drillWeek depends on removed Recharts 2 API (activePayload) - only usage in codebase",
+    "lib/schemas.ts taskCreateSchema criteria shape mismatched backend TaskIn.criteria: list[CriterionIn] (fixed)",
+    "importers.parse_csv raises instead of returning headers when date unmapped; ImportWizard only renders mapping from successful preview",
+    "api._detail computed.api_equiv_cost sums known prices only and yields 0 for all-unknown",
+    "Pydantic input models accept unknown fields silently",
+    "create_task datetime.now() vs services.utcnow() inconsistency",
+    "frontend sampleCcusage builds dates with local-midnight Date then toISOString (UTC) - dates shift one day in UTC+ timezones"
+  ],
+  "updated_files": ["/app/frontend/src/lib/schemas.ts", "/app/backend/tests/test_e2e_public_api.py"],
+  "success_rate": {"backend": "94% (15/16 e2e; 31/31 existing unit tests)", "frontend": "~92% (2 of ~25 flows broken after tester fix: week-bar drill, CSV mapping for unknown headers)"},
+  "test_credentials": "None - no auth",
+  "seed_data_creation": "Created TEST_ tasks/usage/imports/subscriptions during testing; all wiped with POST /api/v1/demo/reset at the end (410 tasks / 663 usage restored).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run `cd /app/backend && python -m pytest tests -q -n 0` (47 tests; test_csv_unmapped_preview_returns_headers documents the CSV mapping bug and should pass once fixed). Drift response uses group['overall'] for the label (group['label'] is the display name). Task reference field is reference_human_minutes. Selects are native <select> (use select_option). Switches expose aria-checked. Retest: week-bar click on value-chart opens drill-sheet; CSV 'when,llm,in,out,usd' shows csv-mapping; task computed API-eq for glm-4.6 tasks shows '—'. Reset demo data at end via POST /api/v1/demo/reset.",
+  "rca of the issue": "1) Create-task-with-criteria: frontend zod schema produced string[] while backend expects list[{text, met}] -> FastAPI 422 'Input should be a valid dictionary' surfaced in new-task-error. Fixed in schemas.ts. 2) Week drill: Recharts 3 changed chart mouse handler payload (MouseHandlerDataParam: activeIndex/activeLabel, no activePayload) so drillWeek returns early. Repro: click any bar on '/' -> no drill-sheet. 3) CSV mapping: parse_csv raises ParseError before returning headers; UI onError clears preview, mapping UI guarded by preview.csv.headers. Repro: paste 'when,llm,in,out,usd\\n2026-10-10,glm-4.6,100,50,0.02', format CSV, Preview -> only toast."
+}

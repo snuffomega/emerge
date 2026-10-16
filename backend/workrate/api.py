@@ -14,6 +14,7 @@ from . import analytics as A
 from . import community, seed, services as S
 from .db import get_db
 from .importers import ParseError
+from .models import utcnow
 from .models import (AcceptanceCriterion, AgentModel, Deliverable, Evidence, Harness, ImportBatch, Project,
                      Subscription, Task, UsageRecord)
 from .schemas import (CriterionIn, CriterionOut, CriterionPatch, DeliverableIn, DeliverableOut, EvidenceIn,
@@ -144,7 +145,7 @@ def delete_sub(sid: int, db: Session = Depends(get_db)):
 @router.get("/tasks", response_model=list[TaskListItem], tags=["ledger"])
 def list_tasks(f: S.Filters = Depends(filters), status: str | None = None, category: str | None = None,
                difficulty: str | None = None, q: str | None = None, ids: list[int] = Query(default=[]),
-               limit: int = Query(default=500, le=5000), db: Session = Depends(get_db)):
+               limit: int = Query(default=5000, le=20000), db: Session = Depends(get_db)):
     tasks = S.query_tasks(db, f, f.start, f.end)
     if ids:
         tasks = [t for t in tasks if t.id in ids]
@@ -197,7 +198,7 @@ def _detail(db: Session, t: Task) -> TaskDetail:
     d.computed = {
         "tokens": sum(u.total_tokens for u in usage), "sessions": len(usage),
         "actual_cost": sum(alloc.get(u.id, 0) for u in usage),
-        "api_equiv_cost": sum(u.api_equiv_cost for u in usage if u.api_equiv_cost is not None),
+        "api_equiv_cost": sum(u.api_equiv_cost for u in usage if u.api_equiv_cost is not None) if any(u.api_equiv_cost is not None for u in usage) else None,
         "unknown_price_records": sum(1 for u in usage if u.api_equiv_cost is None),
         "agent_minutes": sum(mins) if mins else None, "agent_minutes_missing": len(usage) - len(mins),
         "time_to_accept_hours": tta, "reference_minutes": ref, "reference_source": src, "reference_confidence": conf,
@@ -231,7 +232,7 @@ def create_task(body: TaskIn, db: Session = Depends(get_db)):
         data.pop("created_at")
     t = Task(**data)
     t.criteria = [AcceptanceCriterion(**c.model_dump()) for c in body.criteria]
-    S.apply_task_state(t, datetime.now().replace(microsecond=0))
+    S.apply_task_state(t, utcnow())
     db.add(t)
     db.commit()
     return get_task(t.id, db)

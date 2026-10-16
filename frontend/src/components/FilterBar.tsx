@@ -53,7 +53,7 @@ export function FilterBar() {
   const { data: meta } = useMeta();
   const presets = useMemo(() => {
     if (!meta) return [];
-    const end = new Date(`${meta.range.end}T00:00:00`);
+    const end = new Date(`${meta.range.end}T00:00:00Z`);
     const back = (days: number) => iso(new Date(end.getTime() - (days - 1) * 86400000));
     return [
       { label: "2W", start: back(14), end: meta.range.end },

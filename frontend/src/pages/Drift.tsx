@@ -69,7 +69,7 @@ function GroupCard({ g, min, windows }: { g: any; min: number; windows: any }) {
         </div>
         <div className="h-[200px] border-l border-line p-2">
           <ResponsiveContainer>
-            <LineChart data={data} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
+            <LineChart accessibilityLayer={false} data={data} margin={{ top: 10, right: 24, left: -18, bottom: 0 }}>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis domain={[0, 1]} tickFormatter={(v) => `${v * 100}`} tickLine={false} axisLine={false} />

@@ -166,8 +166,11 @@ def test_csv_import_with_mapping(client, seeded):
     pv = client.post(f"{V}/imports/preview", json=body).json()
     assert pv["counts"] == {"new": 1} and pv["rows"][0]["total_tokens"] == 150
     assert client.post(f"{V}/imports/commit", json=body).json()["rows_imported"] == 1
-    bad = client.post(f"{V}/imports/preview", json={**body, "csv_mapping": None, "content": "foo,bar\n1,2\n"})
-    assert bad.status_code == 422
+    unmapped = client.post(f"{V}/imports/preview", json={**body, "csv_mapping": None}).json()
+    assert unmapped["csv"]["headers"] == ["when", "llm", "in", "out", "usd"] and unmapped["file_warnings"] and unmapped["total"] == 0
+    assert client.post(f"{V}/imports/preview", json={**body, "content": "not json, not csv"}).status_code == 200
+    assert client.post(f"{V}/imports/preview", json={**body, "format": "ccusage", "content": "{bad"}).status_code == 422
+    assert client.patch(f"{V}/tasks/1", json={"reference_minutes": 5}).status_code == 422  # unknown fields rejected
 
 
 def test_model_price_edit_reprices_usage(client, seeded):
@@ -187,6 +190,8 @@ def test_community_preview_never_shares_identifiers(client, seeded):
     for proj in client.get(f"{V}/meta").json()["projects"]:
         assert proj["name"] not in blob
     assert all(b["n"] >= p["k_anonymity"] for b in p["buckets"])
+    assert p["tasks_shared"] > 0 and p["tasks_shared"] + p["tasks_suppressed"] == p["tasks_considered"]
+    assert all("week" not in b for b in p["buckets"])
 
 
 def test_validation_and_404(client, seeded):

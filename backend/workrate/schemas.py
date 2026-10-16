@@ -9,11 +9,15 @@ Outcome = Literal["in_progress", "delivered", "failed", "abandoned"]
 Billing = Literal["subscription", "api"]
 
 
+class Inp(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
 class ORM(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ProjectIn(BaseModel):
+class ProjectIn(Inp):
     name: str = Field(min_length=1, max_length=120)
     description: str = ""
 
@@ -25,7 +29,7 @@ class ProjectOut(ORM):
     is_synthetic: bool
 
 
-class ModelIn(BaseModel):
+class ModelIn(Inp):
     name: str = Field(min_length=1, max_length=120)
     provider: str = "unknown"
     input_price: float | None = Field(default=None, ge=0)
@@ -34,7 +38,7 @@ class ModelIn(BaseModel):
     cache_read_price: float | None = Field(default=None, ge=0)
 
 
-class ModelPatch(BaseModel):
+class ModelPatch(Inp):
     provider: str | None = None
     input_price: float | None = Field(default=None, ge=0)
     output_price: float | None = Field(default=None, ge=0)
@@ -53,7 +57,7 @@ class ModelOut(ORM):
     is_synthetic: bool
 
 
-class HarnessIn(BaseModel):
+class HarnessIn(Inp):
     name: str = Field(min_length=1, max_length=60)
     display_name: str
 
@@ -65,7 +69,7 @@ class HarnessOut(ORM):
     is_synthetic: bool
 
 
-class SubscriptionIn(BaseModel):
+class SubscriptionIn(Inp):
     name: str = Field(min_length=1)
     harness_id: int
     monthly_cost: float = Field(ge=0)
@@ -74,7 +78,7 @@ class SubscriptionIn(BaseModel):
     notes: str = ""
 
 
-class SubscriptionPatch(BaseModel):
+class SubscriptionPatch(Inp):
     name: str | None = None
     monthly_cost: float | None = Field(default=None, ge=0)
     start_date: date | None = None
@@ -93,12 +97,12 @@ class SubscriptionOut(ORM):
     is_synthetic: bool
 
 
-class CriterionIn(BaseModel):
+class CriterionIn(Inp):
     text: str = Field(min_length=1)
     met: bool = False
 
 
-class CriterionPatch(BaseModel):
+class CriterionPatch(Inp):
     text: str | None = None
     met: bool | None = None
 
@@ -109,7 +113,7 @@ class CriterionOut(ORM):
     met: bool
 
 
-class DeliverableIn(BaseModel):
+class DeliverableIn(Inp):
     kind: Literal["pull_request", "commit", "document", "artifact"]
     title: str = Field(min_length=1)
     url: str | None = None
@@ -122,7 +126,7 @@ class DeliverableOut(ORM):
     url: str | None
 
 
-class EvidenceIn(BaseModel):
+class EvidenceIn(Inp):
     kind: Literal["test_run", "review", "ci", "link", "note"]
     summary: str = Field(min_length=1)
     url: str | None = None
@@ -144,7 +148,7 @@ class HistoryOut(ORM):
     new_value: str | None
 
 
-class TaskIn(BaseModel):
+class TaskIn(Inp):
     project_id: int
     title: str = Field(min_length=1, max_length=255)
     description: str = ""
@@ -167,7 +171,7 @@ class TaskIn(BaseModel):
     criteria: list[CriterionIn] = []
 
 
-class TaskPatch(BaseModel):
+class TaskPatch(Inp):
     project_id: int | None = None
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
@@ -257,7 +261,7 @@ class TaskDetail(TaskOut):
     computed: dict = {}
 
 
-class UsageIn(BaseModel):
+class UsageIn(Inp):
     harness_id: int
     model_id: int | None = None
     project_id: int | None = None
@@ -273,7 +277,7 @@ class UsageIn(BaseModel):
     reported_cost: float | None = Field(default=None, ge=0)
 
 
-class UsagePatch(BaseModel):
+class UsagePatch(Inp):
     task_id: int | None = None
     project_id: int | None = None
     model_id: int | None = None
@@ -282,12 +286,12 @@ class UsagePatch(BaseModel):
     reported_cost: float | None = Field(default=None, ge=0)
 
 
-class LinkRequest(BaseModel):
+class LinkRequest(Inp):
     usage_ids: list[int] = Field(min_length=1)
     task_id: int | None
 
 
-class ImportRequest(BaseModel):
+class ImportRequest(Inp):
     content: str = Field(min_length=1)
     filename: str = "upload"
     format: Literal["auto", "ccusage", "csv"] = "auto"

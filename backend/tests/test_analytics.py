@@ -11,7 +11,7 @@ def task(i, outcome="delivered", accepted=True, verified=False, rework=0, interv
          ref=None, cat="feature", diff="medium", created=datetime(2026, 5, 4, 9), hours=5, reported=True,
          model=1, harness=1, version="1.0", project=1):
     return NS(id=i, outcome=outcome, human_accepted=accepted, verified=verified, rework_cycles=rework,
-              intervention_count=interventions, human_minutes=human, reference_human_minutes=ref, category=cat,
+              intervention_count=interventions, human_minutes=human, review_minutes=None, reference_human_minutes=ref, category=cat,
               difficulty=diff, created_at=created, accepted_at=created + timedelta(hours=hours) if accepted else None,
               agent_reported_complete=reported, model_id=model, harness_id=harness, harness_version=version,
               project_id=project)
